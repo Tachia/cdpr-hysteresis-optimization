@@ -1,7 +1,3 @@
-"""
-Professional Figure Generation for CDPR Research Paper
-Creates publication-quality plots for cable-driven parallel robot simulation results
-"""
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -10,26 +6,6 @@ from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.patches as mpatches
 from scipy.signal import butter, filtfilt
 import seaborn as sns
-
-# Set publication-quality parameters
-plt.rcParams['font.family'] = 'serif'
-plt.rcParams['font.serif'] = ['Times New Roman']
-plt.rcParams['font.size'] = 10
-plt.rcParams['axes.labelsize'] = 11
-plt.rcParams['axes.titlesize'] = 12
-plt.rcParams['xtick.labelsize'] = 9
-plt.rcParams['ytick.labelsize'] = 9
-plt.rcParams['legend.fontsize'] = 9
-plt.rcParams['figure.titlesize'] = 12
-plt.rcParams['lines.linewidth'] = 1.5
-plt.rcParams['axes.grid'] = True
-plt.rcParams['grid.alpha'] = 0.3
-
-# Color scheme for consistency
-COLOR_PROPOSED = '#1f77b4'  # Blue
-COLOR_BASELINE = '#d62728'  # Red
-COLOR_REFERENCE = '#2ca02c'  # Green
-COLOR_CABLE = '#ff7f0e'  # Orange
 
 # Simulation parameters
 np.random.seed(42)
@@ -43,102 +19,12 @@ m_cables = 8  # Number of cables
 m_platform = 15.0  # kg
 workspace_size = [4.0, 4.0, 3.0]  # meters (X, Y, Z)
 
-print("Generating CDPR simulation data and figures...")
-print(f"Simulation time: {t_sim}s, Samples: {n_samples}, dt: {dt}s")
-
 # ============================================================================
-# FIGURE 1: CDPR System Schematic (3D Visualization)
+# Bouc-Wen Hysteresis Behavior
 # ============================================================================
-print("\n[1/8] Creating Figure 1: CDPR System Schematic...")
-
-fig = plt.figure(figsize=(10, 8))
-ax = fig.add_subplot(111, projection='3d')
-
-# Define anchor points (corners of workspace + mid-points)
-anchor_points = np.array([
-    [0, 0, 3.0], [4.0, 0, 3.0], [4.0, 4.0, 3.0], [0, 4.0, 3.0],  # Top corners
-    [0, 0, 0], [4.0, 0, 0], [4.0, 4.0, 0], [0, 4.0, 0]  # Bottom corners
-])
-
-# Platform position (center of workspace, mid-height)
-platform_center = np.array([2.0, 2.0, 1.5])
-platform_size = 0.4
-
-# Draw workspace frame
-for i in range(4):
-    next_i = (i + 1) % 4
-    # Top frame
-    ax.plot3D(*zip(anchor_points[i], anchor_points[next_i]), 'k-', linewidth=2, alpha=0.3)
-    # Bottom frame
-    ax.plot3D(*zip(anchor_points[i+4], anchor_points[next_i+4]), 'k-', linewidth=2, alpha=0.3)
-    # Vertical edges
-    ax.plot3D(*zip(anchor_points[i], anchor_points[i+4]), 'k-', linewidth=2, alpha=0.3)
-
-# Draw platform (as a rectangular prism)
-platform_corners = np.array([
-    [-1, -1, -0.1], [1, -1, -0.1], [1, 1, -0.1], [-1, 1, -0.1],
-    [-1, -1, 0.1], [1, -1, 0.1], [1, 1, 0.1], [-1, 1, 0.1]
-]) * platform_size / 2 + platform_center
-
-for i in range(4):
-    next_i = (i + 1) % 4
-    ax.plot3D(*zip(platform_corners[i], platform_corners[next_i]), 'b-', linewidth=3)
-    ax.plot3D(*zip(platform_corners[i+4], platform_corners[next_i+4]), 'b-', linewidth=3)
-    ax.plot3D(*zip(platform_corners[i], platform_corners[i+4]), 'b-', linewidth=3)
-
-# Draw cables from anchors to platform
-for i in range(m_cables):
-    ax.plot3D(*zip(anchor_points[i], platform_center), 
-              color=COLOR_CABLE, linestyle='--', linewidth=1.5, alpha=0.7)
-    # Mark anchor points
-    ax.scatter(*anchor_points[i], color='red', s=100, marker='o', 
-               edgecolors='black', linewidths=1.5, zorder=5)
-
-# Mark platform center
-ax.scatter(*platform_center, color='blue', s=200, marker='s', 
-           edgecolors='black', linewidths=2, zorder=5, label='Platform')
-
-# Add coordinate frame at origin
-axis_length = 0.5
-ax.quiver(0, 0, 0, axis_length, 0, 0, color='red', arrow_length_ratio=0.2, linewidth=2)
-ax.quiver(0, 0, 0, 0, axis_length, 0, color='green', arrow_length_ratio=0.2, linewidth=2)
-ax.quiver(0, 0, 0, 0, 0, axis_length, color='blue', arrow_length_ratio=0.2, linewidth=2)
-
-# Labels and annotations
-ax.text(axis_length, 0, 0, 'X', fontsize=12, fontweight='bold')
-ax.text(0, axis_length, 0, 'Y', fontsize=12, fontweight='bold')
-ax.text(0, 0, axis_length, 'Z', fontsize=12, fontweight='bold')
-
-ax.text(anchor_points[0, 0], anchor_points[0, 1], anchor_points[0, 2] + 0.2, 
-        'A₁', fontsize=10, ha='center')
-ax.text(platform_center[0] + 0.3, platform_center[1], platform_center[2], 
-        'Platform\n(m = 15 kg)', fontsize=10, ha='left', 
-        bbox=dict(boxstyle='round', facecolor='wheat', alpha=0.5))
-
-ax.set_xlabel('X (m)', fontsize=11, labelpad=10)
-ax.set_ylabel('Y (m)', fontsize=11, labelpad=10)
-ax.set_zlabel('Z (m)', fontsize=11, labelpad=10)
-ax.set_title('Cable-Driven Parallel Robot Configuration\n8-Cable Overconstrained System', 
-             fontsize=13, fontweight='bold', pad=20)
-
-ax.set_xlim([-.5, 4.5])
-ax.set_ylim([-.5, 4.5])
-ax.set_zlim([-.5, 3.5])
-ax.view_init(elev=20, azim=45)
-
-plt.tight_layout()
-plt.savefig('/home/sandbox/figure1_cdpr_schematic.png', dpi=300, bbox_inches='tight')
-plt.savefig('/home/sandbox/figure1_cdpr_schematic.pdf', bbox_inches='tight')
-print("  ✓ Saved: figure1_cdpr_schematic.png/pdf")
-plt.close()
-
-# ============================================================================
-# FIGURE 2: Bouc-Wen Hysteresis Behavior
-# ============================================================================
-print("\n[2/8] Creating Figure 2: Bouc-Wen Hysteresis Loops...")
 
 def bouc_wen_hysteresis(strain, A, B, gamma, n):
-    """Simulate Bouc-Wen hysteresis model"""
+    # """Simulate Bouc-Wen hysteresis model"""
     z = np.zeros_like(strain)
     z[0] = 0
     
@@ -202,15 +88,11 @@ for idx, (ax, params, color) in enumerate(zip(axes.flat, param_sets, colors)):
 fig.suptitle('Bouc-Wen Hysteresis Model: Parameter Sensitivity Analysis', 
              fontsize=14, fontweight='bold', y=0.995)
 plt.tight_layout()
-plt.savefig('/home/sandbox/figure2_hysteresis_loops.png', dpi=300, bbox_inches='tight')
-plt.savefig('/home/sandbox/figure2_hysteresis_loops.pdf', bbox_inches='tight')
-print("  ✓ Saved: figure2_hysteresis_loops.png/pdf")
 plt.close()
 
 # ============================================================================
-# FIGURE 3: LuGre Friction Model
+# LuGre Friction Model
 # ============================================================================
-print("\n[3/8] Creating Figure 3: LuGre Friction Model Characteristics...")
 
 def lugre_friction(velocity, sigma_0=1000, sigma_1=100, sigma_2=10, v_s=0.01, F_c=50, F_s=80):
     """LuGre friction model with Stribeck effect"""
@@ -290,15 +172,11 @@ axes[1, 1].legend(lines1 + lines2, labels1 + labels2, loc='upper right')
 fig.suptitle('LuGre Friction Model: Characteristics and Stribeck Effect', 
              fontsize=14, fontweight='bold', y=0.995)
 plt.tight_layout()
-plt.savefig('/home/sandbox/figure3_lugre_friction.png', dpi=300, bbox_inches='tight')
-plt.savefig('/home/sandbox/figure3_lugre_friction.pdf', bbox_inches='tight')
-print("  ✓ Saved: figure3_lugre_friction.png/pdf")
 plt.close()
 
 # ============================================================================
-# FIGURE 4: Trajectory Tracking Performance
+# Trajectory Tracking Performance
 # ============================================================================
-print("\n[4/8] Creating Figure 4: Trajectory Tracking Performance...")
 
 # Generate reference trajectory (circular path in XY plane with Z oscillation)
 radius = 0.8  # meters
@@ -398,16 +276,11 @@ ax5.view_init(elev=20, azim=45)
 
 fig.suptitle('Trajectory Tracking Performance Comparison', 
              fontsize=14, fontweight='bold')
-
-plt.savefig('/home/sandbox/figure4_tracking_performance.png', dpi=300, bbox_inches='tight')
-plt.savefig('/home/sandbox/figure4_tracking_performance.pdf', bbox_inches='tight')
-print("  ✓ Saved: figure4_tracking_performance.png/pdf")
 plt.close()
 
 # ============================================================================
-# FIGURE 5: Cable Tension Profiles
+# Cable Tension Profiles
 # ============================================================================
-print("\n[5/8] Creating Figure 5: Cable Tension Profiles...")
 
 # Generate cable tensions
 T_nominal = 100  # Nominal tension (N)
@@ -485,16 +358,11 @@ ax.grid(True, alpha=0.3)
 ax.set_xlim([0, t_sim])
 
 plt.tight_layout()
-plt.savefig('/home/sandbox/figure5_cable_tensions.png', dpi=300, bbox_inches='tight')
-plt.savefig('/home/sandbox/figure5_cable_tensions.pdf', bbox_inches='tight')
-print("  ✓ Saved: figure5_cable_tensions.png/pdf")
 plt.close()
 
 # ============================================================================
-# FIGURE 6: Vibration Analysis (Frequency Domain)
+#  Vibration Analysis (Frequency Domain)
 # ============================================================================
-print("\n[6/8] Creating Figure 6: Vibration Analysis...")
-
 # Compute FFT of position errors
 def compute_fft(signal, dt):
     """Compute FFT and return frequencies and magnitude"""
@@ -559,15 +427,11 @@ axes[2, 1].set_xlabel('Frequency (Hz)', fontsize=11)
 fig.suptitle('Vibration Analysis: Time and Frequency Domain Comparison', 
              fontsize=14, fontweight='bold')
 plt.tight_layout()
-plt.savefig('/home/sandbox/figure6_vibration_analysis.png', dpi=300, bbox_inches='tight')
-plt.savefig('/home/sandbox/figure6_vibration_analysis.pdf', bbox_inches='tight')
-print("  ✓ Saved: figure6_vibration_analysis.png/pdf")
 plt.close()
 
 # ============================================================================
-# FIGURE 7: Computational Performance
+# Computational Performance
 # ============================================================================
-print("\n[7/8] Creating Figure 7: Computational Performance...")
 
 # QP solve times vs problem size
 n_cables_range = np.arange(4, 13, 1)
@@ -669,15 +533,11 @@ ax.set_ylim([0, 105])
 fig.suptitle('Computational Performance Analysis', 
              fontsize=14, fontweight='bold')
 plt.tight_layout()
-plt.savefig('/home/sandbox/figure7_computational_performance.png', dpi=300, bbox_inches='tight')
-plt.savefig('/home/sandbox/figure7_computational_performance.pdf', bbox_inches='tight')
-print("  ✓ Saved: figure7_computational_performance.png/pdf")
 plt.close()
 
 # ============================================================================
-# FIGURE 8: Performance Metrics Summary
+# Performance Metrics Summary
 # ============================================================================
-print("\n[8/8] Creating Figure 8: Performance Metrics Summary...")
 
 fig, axes = plt.subplots(2, 2, figsize=(12, 10))
 
@@ -827,117 +687,4 @@ ax.set_title('Performance Summary Table', fontsize=11, fontweight='bold', pad=20
 fig.suptitle('Comprehensive Performance Metrics Summary', 
              fontsize=14, fontweight='bold')
 plt.tight_layout()
-plt.savefig('/home/sandbox/figure8_performance_summary.png', dpi=300, bbox_inches='tight')
-plt.savefig('/home/sandbox/figure8_performance_summary.pdf', bbox_inches='tight')
-print("  ✓ Saved: figure8_performance_summary.png/pdf")
 plt.close()
-
-# ============================================================================
-# Generate Summary Report
-# ============================================================================
-print("\n" + "="*70)
-print("FIGURE GENERATION COMPLETE")
-print("="*70)
-
-summary_report = f"""
-CDPR SIMULATION FIGURES - GENERATION SUMMARY
-{'='*70}
-
-Generated 8 professional publication-quality figures:
-
-1. Figure 1: CDPR System Schematic (3D)
-   - 8-cable overconstrained configuration
-   - Platform and anchor point visualization
-   - Coordinate frame representation
-
-2. Figure 2: Bouc-Wen Hysteresis Loops
-   - Parameter sensitivity analysis (4 cases)
-   - Hysteresis loop characteristics
-   - Loading/unloading path visualization
-
-3. Figure 3: LuGre Friction Model
-   - Full friction characteristic
-   - Stribeck effect detail
-   - Model comparison (Coulomb, viscous, LuGre)
-   - Stick-slip dynamics
-
-4. Figure 4: Trajectory Tracking Performance
-   - Position tracking errors (X, Y, Z axes)
-   - 3D trajectory visualization
-   - RMS error comparison
-   - Improvement: ~73% reduction in tracking error
-
-5. Figure 5: Cable Tension Profiles
-   - All 8 cable tensions over time
-   - Baseline vs. proposed comparison
-   - Tension variation reduction: ~58%
-
-6. Figure 6: Vibration Analysis
-   - Time domain error signals
-   - Frequency domain (FFT) analysis
-   - Vibration reduction quantification
-
-7. Figure 7: Computational Performance
-   - QP solve time vs. problem size
-   - Computational breakdown by component
-   - Control loop timing distribution
-   - Real-time feasibility analysis
-
-8. Figure 8: Performance Metrics Summary
-   - Multi-metric comparison
-   - Radar chart visualization
-   - Comprehensive summary table
-
-{'='*70}
-KEY PERFORMANCE IMPROVEMENTS (Proposed vs. Baseline):
-{'='*70}
-
-✓ Tracking Accuracy:  ~73% improvement in RMS error
-✓ Vibration Reduction: ~72% reduction in oscillations
-✓ Tension Smoothing:   ~58% reduction in tension variation
-✓ Computational Speed: ~35% faster loop execution
-✓ Real-time Success:   65% → 95% at 150 Hz control rate
-
-{'='*70}
-FILE OUTPUTS:
-{'='*70}
-
-All figures saved in both PNG (300 DPI) and PDF formats:
-- /home/sandbox/figure1_cdpr_schematic.*
-- /home/sandbox/figure2_hysteresis_loops.*
-- /home/sandbox/figure3_lugre_friction.*
-- /home/sandbox/figure4_tracking_performance.*
-- /home/sandbox/figure5_cable_tensions.*
-- /home/sandbox/figure6_vibration_analysis.*
-- /home/sandbox/figure7_computational_performance.*
-- /home/sandbox/figure8_performance_summary.*
-
-{'='*70}
-RECOMMENDED USAGE IN PAPER:
-{'='*70}
-
-- Figure 1: Introduction / System Description section
-- Figures 2-3: Modeling section (cable hysteresis & friction)
-- Figures 4-6: Results section (tracking, tension, vibration)
-- Figure 7: Computational analysis section
-- Figure 8: Discussion / Conclusion section
-
-All figures are publication-ready with:
-✓ High resolution (300 DPI)
-✓ Professional typography (Times New Roman)
-✓ Consistent color scheme
-✓ Clear labels and legends
-✓ Grid lines for readability
-✓ Statistical annotations
-
-{'='*70}
-"""
-
-print(summary_report)
-
-# Save summary to file
-with open('/home/sandbox/figure_generation_summary.txt', 'w') as f:
-    f.write(summary_report)
-
-print("\n✓ Summary saved to: /home/sandbox/figure_generation_summary.txt")
-print("\nAll figures generated successfully!")
